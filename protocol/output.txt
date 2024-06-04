@@ -1,0 +1,23 @@
+{"Time":"2024-06-03T21:12:34.681294726+10:00","Action":"start","Package":"redisclone/protocol"}
+{"Time":"2024-06-03T21:12:34.682214826+10:00","Action":"run","Package":"redisclone/protocol","Test":"TestPcmd"}
+{"Time":"2024-06-03T21:12:34.682227426+10:00","Action":"output","Package":"redisclone/protocol","Test":"TestPcmd","Output":"=== RUN   TestPcmd\n"}
+{"Time":"2024-06-03T21:12:34.682233826+10:00","Action":"run","Package":"redisclone/protocol","Test":"TestPcmd/SET_foo_32"}
+{"Time":"2024-06-03T21:12:34.682236226+10:00","Action":"output","Package":"redisclone/protocol","Test":"TestPcmd/SET_foo_32","Output":"=== RUN   TestPcmd/SET_foo_32\n"}
+{"Time":"2024-06-03T21:12:34.682262226+10:00","Action":"output","Package":"redisclone/protocol","Test":"TestPcmd/SET_foo_32","Output":"\u001b[35m SET \u001b[32m Key: foo Value: 32 \u001b[0m\n"}
+{"Time":"2024-06-03T21:12:34.682291226+10:00","Action":"run","Package":"redisclone/protocol","Test":"TestPcmd/GET_foo"}
+{"Time":"2024-06-03T21:12:34.682296726+10:00","Action":"output","Package":"redisclone/protocol","Test":"TestPcmd/GET_foo","Output":"=== RUN   TestPcmd/GET_foo\n"}
+{"Time":"2024-06-03T21:12:34.682318326+10:00","Action":"output","Package":"redisclone/protocol","Test":"TestPcmd/GET_foo","Output":"\u001b[35m GET \u001b[32m Key: foo \u001b[0m\n"}
+{"Time":"2024-06-03T21:12:34.682331626+10:00","Action":"run","Package":"redisclone/protocol","Test":"TestPcmd/DEL_foo"}
+{"Time":"2024-06-03T21:12:34.682334226+10:00","Action":"output","Package":"redisclone/protocol","Test":"TestPcmd/DEL_foo","Output":"=== RUN   TestPcmd/DEL_foo\n"}
+{"Time":"2024-06-03T21:12:34.682362526+10:00","Action":"output","Package":"redisclone/protocol","Test":"TestPcmd/DEL_foo","Output":"\u001b[35m DEL \u001b[32m Key: foo \u001b[0m\n"}
+{"Time":"2024-06-03T21:12:34.682391926+10:00","Action":"output","Package":"redisclone/protocol","Test":"TestPcmd","Output":"--- PASS: TestPcmd (0.00s)\n"}
+{"Time":"2024-06-03T21:12:34.682398426+10:00","Action":"output","Package":"redisclone/protocol","Test":"TestPcmd/SET_foo_32","Output":"    --- PASS: TestPcmd/SET_foo_32 (0.00s)\n"}
+{"Time":"2024-06-03T21:12:34.682400926+10:00","Action":"pass","Package":"redisclone/protocol","Test":"TestPcmd/SET_foo_32","Elapsed":0}
+{"Time":"2024-06-03T21:12:34.682408626+10:00","Action":"output","Package":"redisclone/protocol","Test":"TestPcmd/GET_foo","Output":"    --- PASS: TestPcmd/GET_foo (0.00s)\n"}
+{"Time":"2024-06-03T21:12:34.682411026+10:00","Action":"pass","Package":"redisclone/protocol","Test":"TestPcmd/GET_foo","Elapsed":0}
+{"Time":"2024-06-03T21:12:34.682412926+10:00","Action":"output","Package":"redisclone/protocol","Test":"TestPcmd/DEL_foo","Output":"    --- PASS: TestPcmd/DEL_foo (0.00s)\n"}
+{"Time":"2024-06-03T21:12:34.682415426+10:00","Action":"pass","Package":"redisclone/protocol","Test":"TestPcmd/DEL_foo","Elapsed":0}
+{"Time":"2024-06-03T21:12:34.682417226+10:00","Action":"pass","Package":"redisclone/protocol","Test":"TestPcmd","Elapsed":0}
+{"Time":"2024-06-03T21:12:34.682419026+10:00","Action":"output","Package":"redisclone/protocol","Output":"PASS\n"}
+{"Time":"2024-06-03T21:12:34.682572526+10:00","Action":"output","Package":"redisclone/protocol","Output":"ok  \tredisclone/protocol\t0.001s\n"}
+{"Time":"2024-06-03T21:12:34.682586326+10:00","Action":"pass","Package":"redisclone/protocol","Elapsed":0.001}

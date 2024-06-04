@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
-	"os"
+
+	"github.com/tom773/cardcache/cache"
+	"github.com/tom773/cardcache/protocol"
 )
 
 // Mostly boilerplate from the Go God AnthonyGG
@@ -20,8 +22,18 @@ type Server struct {
 	ln        net.Listener
 	addPeerCh chan *Peer
 	quitCh    chan struct{}
-	msgCh     chan []byte
+	msgCh     chan Message
+	cache     *cache.Cache
 }
+
+const (
+	red        = "\033[31m"
+	green      = "\033[32m"
+	yellow     = "\033[33m"
+	blue       = "\033[34m"
+	magenta    = "\033[35m"
+	colorReset = "\033[0m"
+)
 
 func NewServer(config Config) *Server {
 	if len(config.ListenAddr) == 0 {
@@ -32,7 +44,8 @@ func NewServer(config Config) *Server {
 		peers:     make(map[*Peer]bool),
 		addPeerCh: make(chan *Peer),
 		quitCh:    make(chan struct{}),
-		msgCh:     make(chan []byte),
+		msgCh:     make(chan Message),
+		cache:     cache.NewCache(),
 	}
 	return s
 }
@@ -50,10 +63,43 @@ func (s *Server) Start() error {
 
 	return s.acceptLoop()
 }
-func (s *Server) handleMsg(rawMsg []byte) error {
-	fmt.Fprintf(os.Stdout, "%s%s", green, rawMsg)
-	return nil
+func (s *Server) handleMsg(rawMsg []byte) ([]byte, error) {
+	buf := make([]byte, len(rawMsg))
 
+	copy(buf, rawMsg)
+	r := protocol.Praw(buf)
+	cmd, kv, err := protocol.Pcmd(r)
+	var response []byte
+	if err != nil {
+		return []byte(""), err
+	}
+	switch cmd {
+	case protocol.CmdSet:
+		err := s.cache.Set(kv.Key, kv.Value)
+		if err != nil {
+			return []byte(""), err
+		}
+		msg := fmt.Sprintf("%sSet key %s with value %s", green, string(kv.Key), string(kv.Value))
+		response = []byte(msg)
+	case protocol.CmdGet:
+		value, err := s.cache.Get(kv.Key)
+		if err != nil {
+			return []byte(""), err
+		}
+		msg := fmt.Sprintf("%sValue for key %s: %s", blue, string(kv.Key), string(value))
+		response = []byte(msg)
+	case protocol.CmdDel:
+		err := s.cache.Del(kv.Key)
+		if err != nil {
+			return []byte(""), err
+		}
+		msg := fmt.Sprintf("%sDeleted key %s", red, string(kv.Key))
+		response = []byte(msg)
+	default:
+		return []byte(""), fmt.Errorf("Unknown command")
+	}
+
+	return response, nil
 }
 
 func (s *Server) loop() {
@@ -61,10 +107,16 @@ func (s *Server) loop() {
 		select {
 		case peer := <-s.addPeerCh:
 			s.peers[peer] = true
-		case rawMsg := <-s.msgCh:
-			if err := s.handleMsg(rawMsg); err != nil {
+		case msg := <-s.msgCh:
+			response, err := s.handleMsg(msg.Content)
+			if err != nil {
 				slog.Error("Handle Msg Err", "err", err)
+				continue
 			}
+			if len(response) == 0 {
+				continue
+			}
+			msg.peer.outCh <- response
 		case <-s.quitCh:
 			return
 		}
@@ -87,6 +139,7 @@ func (s *Server) handleConn(conn net.Conn) {
 	s.addPeerCh <- peer
 	slog.Info("New Peer", "addr", conn.RemoteAddr())
 	go peer.readLoop()
+	go peer.writeLoop()
 }
 
 func main() {
