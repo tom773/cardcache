@@ -1,8 +1,42 @@
 # Card Cache
 
-## Trying to make a distributed in-memort cache in Go for my own learning purposes.
+## What is this?
+<p>Card Cache is a simple library written in Gofor the distributed caching key-value pairs in memory. My aim is to make this similar to something like Redis w/ a simple API.
+This is a work in progress and I'm still working on it. This is mainly just for learning purposes, but I am hoping I could use this in my Svoker project, maybe for the betting system.</p>
 
-<p>As the name suggests, this is a cache for storing key-value pairs in an in memory cache. I doubt I will add this to the Svoker codebase, unless it can outperform my existing Realtime subscriptions with PB. 
-Just think it would be really cool to build my own version to understand deep networking concepts and how Realtime DB's work!</p>
-<br><br>
-<p> MVP would be a system where I can store game state in a cache and have multiple clients subscribe to the cache to get the latest game state.</p>
+## How to use?
+
+1. Install & Run
+```
+git clone git@github.com:tom773/cardcache.git
+cd cardcache
+make run
+```
+2. Usage. At the moment, netcat is the best way to interact with the server.
+```
+nc localhost 42069
+```
+3. Commands
+```
+SET <key> <value>
+e.g SET foo bar
+
+GET <key>
+e.g GET foo
+Outputs: bar
+
+DEL <key>
+e.g DEL foo
+```
+
+### Features
+- [x] Basic GET, SET, DEL commands
+- [x] Basic TCP server
+- [ ] Pub/Sub via channels / websockets
+- [ ] Types (int, string, JSON)
+- [ ] Sharding
+- [ ] Persistence
+- [ ] Clustering
+- [ ] Benchmarking
+- [ ] Authentication
+

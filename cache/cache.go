@@ -13,6 +13,7 @@ type Cache struct {
 func NewCache() *Cache {
 	return &Cache{}
 }
+
 func (c *Cache) Set(key, value []byte) error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
@@ -23,17 +24,17 @@ func (c *Cache) Set(key, value []byte) error {
 	return nil
 }
 
-func (c *Cache) Get(key []byte) ([]byte, error) {
+func (c *Cache) Get(key []byte) ([]byte, bool) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 	if c.Data == nil {
-		return nil, fmt.Errorf("Cache Empty")
+		return []byte("Cache Empty"), true
 	}
 	value, ok := c.Data[string(key)]
 	if !ok {
-		return nil, fmt.Errorf("Key not found")
+		return []byte("Key not found"), true
 	}
-	return value, nil
+	return value, false
 }
 
 func (c *Cache) Del(key []byte) error {

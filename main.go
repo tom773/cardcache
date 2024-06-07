@@ -74,26 +74,31 @@ func (s *Server) handleMsg(rawMsg []byte) ([]byte, error) {
 		return []byte(""), err
 	}
 	switch cmd {
+
 	case protocol.CmdSet:
 		err := s.cache.Set(kv.Key, kv.Value)
 		if err != nil {
 			return []byte(""), err
 		}
-		msg := fmt.Sprintf("%sSet key %s with value %s", green, string(kv.Key), string(kv.Value))
+		msg := fmt.Sprintf("%sSet key %s with value %s%s", green, string(kv.Key), string(kv.Value), colorReset)
 		response = []byte(msg)
+
 	case protocol.CmdGet:
-		value, err := s.cache.Get(kv.Key)
-		if err != nil {
-			return []byte(""), err
+		value, error := s.cache.Get(kv.Key)
+		if error {
+			msg := fmt.Sprintf("%s%s%s", red, value, colorReset)
+			response = []byte(msg)
+			break
 		}
-		msg := fmt.Sprintf("%sValue for key %s: %s", blue, string(kv.Key), string(value))
+		msg := fmt.Sprintf("%sValue for key %s: %s%s", blue, string(kv.Key), string(value), colorReset)
 		response = []byte(msg)
+
 	case protocol.CmdDel:
 		err := s.cache.Del(kv.Key)
 		if err != nil {
 			return []byte(""), err
 		}
-		msg := fmt.Sprintf("%sDeleted key %s", red, string(kv.Key))
+		msg := fmt.Sprintf("%sDeleted key %s%s", red, string(kv.Key), colorReset)
 		response = []byte(msg)
 	default:
 		return []byte(""), fmt.Errorf("Unknown command")

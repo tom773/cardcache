@@ -1,4 +1,7 @@
-/bin/
+/bin
 gopolish
-bin
+.toml
 /bin/*
+/tmp
+/tmp/*
+testing.sh
