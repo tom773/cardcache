@@ -6,10 +6,10 @@ import (
 	"net"
 
 	"github.com/tom773/cardcache/cache"
+	"github.com/tom773/cardcache/peer"
 	"github.com/tom773/cardcache/protocol"
 )
 
-// Mostly boilerplate from the Go God AnthonyGG
 const defaultListenAddr = ":42069"
 
 type Config struct {
@@ -18,11 +18,11 @@ type Config struct {
 
 type Server struct {
 	Config
-	peers     map[*Peer]bool
+	peers     map[*peer.Peer]bool
 	ln        net.Listener
-	addPeerCh chan *Peer
+	addPeerCh chan *peer.Peer
 	quitCh    chan struct{}
-	msgCh     chan Message
+	msgCh     chan peer.Message
 	cache     *cache.Cache
 }
 
@@ -41,10 +41,10 @@ func NewServer(config Config) *Server {
 	}
 	s := &Server{
 		Config:    config,
-		peers:     make(map[*Peer]bool),
-		addPeerCh: make(chan *Peer),
+		peers:     make(map[*peer.Peer]bool),
+		addPeerCh: make(chan *peer.Peer),
 		quitCh:    make(chan struct{}),
-		msgCh:     make(chan Message),
+		msgCh:     make(chan peer.Message),
 		cache:     cache.NewCache(),
 	}
 	return s
@@ -63,7 +63,7 @@ func (s *Server) Start() error {
 
 	return s.acceptLoop()
 }
-func (s *Server) handleMsg(rawMsg []byte) ([]byte, error) {
+func (s *Server) handleMsg(p *peer.Peer, rawMsg []byte) ([]byte, error) {
 	buf := make([]byte, len(rawMsg))
 
 	copy(buf, rawMsg)
@@ -100,6 +100,18 @@ func (s *Server) handleMsg(rawMsg []byte) ([]byte, error) {
 		}
 		msg := fmt.Sprintf("%sDeleted key %s%s", red, string(kv.Key), colorReset)
 		response = []byte(msg)
+	case protocol.CmdSub:
+		go func() {
+			ch := s.cache.PubSub.Subscribe(p, string(kv.Key))
+			for {
+				select {
+				case msg := <-ch:
+					p.OutCh <- msg
+				}
+			}
+		}()
+		msg := fmt.Sprintf("%sSubscribed to key %s%s", yellow, string(kv.Key), colorReset)
+		response = []byte(msg)
 	default:
 		return []byte(""), fmt.Errorf("Unknown command")
 	}
@@ -113,7 +125,7 @@ func (s *Server) loop() {
 		case peer := <-s.addPeerCh:
 			s.peers[peer] = true
 		case msg := <-s.msgCh:
-			response, err := s.handleMsg(msg.Content)
+			response, err := s.handleMsg(msg.Peer, msg.Content)
 			if err != nil {
 				slog.Error("Handle Msg Err", "err", err)
 				continue
@@ -121,7 +133,7 @@ func (s *Server) loop() {
 			if len(response) == 0 {
 				continue
 			}
-			msg.peer.outCh <- response
+			msg.Peer.OutCh <- response
 		case <-s.quitCh:
 			return
 		}
@@ -140,11 +152,11 @@ func (s *Server) acceptLoop() error {
 }
 
 func (s *Server) handleConn(conn net.Conn) {
-	peer := NewPeer(conn, s.msgCh)
+	peer := peer.NewPeer(conn, s.msgCh)
 	s.addPeerCh <- peer
 	slog.Info("New Peer", "addr", conn.RemoteAddr())
-	go peer.readLoop()
-	go peer.writeLoop()
+	go peer.ReadLoop()
+	go peer.WriteLoop()
 }
 
 func main() {

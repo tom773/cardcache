@@ -3,15 +3,21 @@ package cache
 import (
 	"fmt"
 	"sync"
+
+	"github.com/tom773/cardcache/peer"
 )
 
 type Cache struct {
-	mu   sync.RWMutex
-	Data map[string][]byte
+	mu     sync.RWMutex
+	Data   map[string][]byte
+	PubSub *peer.PubSub
 }
 
 func NewCache() *Cache {
-	return &Cache{}
+	return &Cache{
+		Data:   make(map[string][]byte),
+		PubSub: peer.NewPubSub(),
+	}
 }
 
 func (c *Cache) Set(key, value []byte) error {
@@ -21,6 +27,7 @@ func (c *Cache) Set(key, value []byte) error {
 		c.Data = make(map[string][]byte)
 	}
 	c.Data[string(key)] = []byte(value)
+	c.PubSub.Publish(string(key), string(value))
 	return nil
 }
 
@@ -49,4 +56,8 @@ func (c *Cache) Del(key []byte) error {
 	}
 	delete(c.Data, string(key))
 	return nil
+}
+
+func (c *Cache) Subscribe(p *peer.Peer, key string) chan []byte {
+	return c.PubSub.Subscribe(p, key)
 }

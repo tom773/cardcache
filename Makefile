@@ -1,5 +1,5 @@
 run: build
-	@./bin/goredis
+	@./bin/cardcache
 
 build:
 	@go build -o bin/cardcache .

@@ -13,6 +13,7 @@ const (
 	CmdSet Command = iota
 	CmdGet
 	CmdDel
+	CmdSub
 )
 
 type ICommand interface {
@@ -32,6 +33,10 @@ type CommandDel struct {
 	Key []byte
 }
 
+type CommandSub struct {
+	Key []byte
+}
+
 type KV struct {
 	Key   []byte
 	Value []byte
@@ -45,6 +50,8 @@ func (c Command) String() string {
 		return "GET"
 	case CmdDel:
 		return "DEL"
+	case CmdSub:
+		return "SUB"
 	default:
 		return "Unknown"
 	}
@@ -84,6 +91,16 @@ func (d *CommandDel) Bytes() []byte {
 	return buf.Bytes()
 }
 
+func (s *CommandSub) Bytes() []byte {
+	buf := new(bytes.Buffer)
+
+	binary.Write(buf, binary.LittleEndian, CmdSub)
+	binary.Write(buf, binary.LittleEndian, uint16(len(s.Key)))
+	binary.Write(buf, binary.LittleEndian, s.Key)
+
+	return buf.Bytes()
+}
+
 func Praw(rawMsg []byte) ICommand {
 
 	parts := bytes.Split(rawMsg, []byte(" "))
@@ -108,6 +125,10 @@ func Praw(rawMsg []byte) ICommand {
 		}
 	case "DEL":
 		return &CommandDel{
+			Key: key,
+		}
+	case "SUB":
+		return &CommandSub{
 			Key: key,
 		}
 	default:
@@ -152,6 +173,14 @@ func Pcmd(r ICommand) (Command, *KV, error) {
 			return cmd, kv, err
 		}
 		kv.Key = bytes.TrimSuffix(d.Key, []byte("\n"))
+		return cmd, kv, nil
+	case CmdSub:
+		s, err := parseSubCommand(Ibytes)
+		if err != nil {
+			fmt.Println(red, "Error parsing sub command", reset)
+			return cmd, kv, err
+		}
+		kv.Key = bytes.TrimSuffix(s.Key, []byte("\n"))
 		return cmd, kv, nil
 	default:
 		return cmd, kv, fmt.Errorf("Unknown command: %d", cmd)
@@ -211,6 +240,21 @@ func parseGetCommand(r io.Reader) (*CommandGet, error) {
 	}
 
 	return g, nil
+}
+
+func parseSubCommand(r io.Reader) (*CommandSub, error) {
+	s := &CommandSub{}
+
+	var keyLen uint16
+	binary.Read(r, binary.LittleEndian, &keyLen)
+
+	s.Key = make([]byte, keyLen)
+	_, err := r.Read(s.Key)
+	if err != nil {
+		return nil, err
+	}
+
+	return s, nil
 }
 
 const (
