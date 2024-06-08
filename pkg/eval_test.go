@@ -4,10 +4,9 @@ import (
 	"testing"
 )
 
-func TestLex(t *testing.T) {
-	lex([]byte("hello"))
-}
-
-func TestLex2(t *testing.T) {
-	lex([]byte("[1, 2, 3]"))
+func TestCreateObject(t *testing.T) {
+	_, err := CreateObject([]byte("player {\"player\": \"string\", \"age\": \"int\", \"score\": \"float\"}"))
+	if err != nil {
+		t.Errorf("error: %v", err)
+	}
 }

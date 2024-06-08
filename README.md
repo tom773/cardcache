@@ -19,20 +19,21 @@ nc localhost 42069
 3. Commands
 ```
 SET <key> <value>
-e.g SET foo bar
 
 GET <key>
-e.g GET foo
-Outputs: bar
 
 DEL <key>
-e.g DEL foo
+
+SUB <key>
+
+TYPE <name> <JSONified schema>
+e.g TYPE user {"name": "string", "age": "int"}
 ```
 
 ### Features
 - [x] Basic GET, SET, DEL commands
 - [x] Basic TCP server
-- [ ] Pub/Sub via channels / websockets
+- [x] Pub/Sub via channels / websockets
 - [ ] Types (int, string, JSON)
 - [ ] Sharding
 - [ ] Persistence

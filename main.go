@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
+	"reflect"
 
 	"github.com/tom773/cardcache/cache"
 	"github.com/tom773/cardcache/peer"
+	"github.com/tom773/cardcache/pkg"
 	"github.com/tom773/cardcache/protocol"
 )
 
@@ -112,6 +114,22 @@ func (s *Server) handleMsg(p *peer.Peer, rawMsg []byte) ([]byte, error) {
 		}()
 		msg := fmt.Sprintf("%sSubscribed to key %s%s", yellow, string(kv.Key), colorReset)
 		response = []byte(msg)
+	// Unsure if this will end up being anything, but I do want a way for the user to use JSON.
+	// Will be working mainly on json unmarshalling SETS and GETS for now but this is pretty cool.
+	case protocol.CmdType:
+		fmt.Println(kv.Value)
+		obj, err := pkg.CreateObject(kv.Value)
+		if err != nil {
+			return []byte(""), err
+		}
+		structType := reflect.StructOf(obj)
+		msg := fmt.Sprintf("Created New Type:\n=====================================================\n")
+		for i := 0; i < structType.NumField(); i++ {
+			field := structType.Field(i)
+			msg += fmt.Sprintf("Field: %s%s%s | Type: %s%s%s\n", pkg.Colors.Cyan, field.Name, pkg.Colors.Reset, pkg.Colors.Purple, field.Type, pkg.Colors.Reset)
+		}
+		response = []byte(msg)
+
 	default:
 		return []byte(""), fmt.Errorf("Unknown command")
 	}

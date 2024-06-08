@@ -14,6 +14,7 @@ const (
 	CmdGet
 	CmdDel
 	CmdSub
+	CmdType
 )
 
 type ICommand interface {
@@ -33,6 +34,10 @@ type CommandDel struct {
 	Key []byte
 }
 
+type CommandType struct {
+	Value []byte
+}
+
 type CommandSub struct {
 	Key []byte
 }
@@ -50,11 +55,23 @@ func (c Command) String() string {
 		return "GET"
 	case CmdDel:
 		return "DEL"
+	case CmdType:
+		return "TYPE"
 	case CmdSub:
 		return "SUB"
 	default:
 		return "Unknown"
 	}
+}
+
+func (c *CommandType) Bytes() []byte {
+	buf := new(bytes.Buffer)
+
+	binary.Write(buf, binary.LittleEndian, CmdType)
+	binary.Write(buf, binary.LittleEndian, uint16(len(c.Value)))
+	binary.Write(buf, binary.LittleEndian, c.Value)
+
+	return buf.Bytes()
 }
 
 func (c *CommandSet) Bytes() []byte {
@@ -131,6 +148,10 @@ func Praw(rawMsg []byte) ICommand {
 		return &CommandSub{
 			Key: key,
 		}
+	case "TYPE":
+		return &CommandType{
+			Value: bytes.SplitN(rawMsg, []byte(" "), 2)[1],
+		}
 	default:
 		fmt.Println(red, "Error parsing message: Unknown command. Use SET, GET, or DEL", reset)
 		return nil
@@ -174,6 +195,14 @@ func Pcmd(r ICommand) (Command, *KV, error) {
 		}
 		kv.Key = bytes.TrimSuffix(d.Key, []byte("\n"))
 		return cmd, kv, nil
+	case CmdType:
+		t, err := parseTypeCommand(Ibytes)
+		if err != nil {
+			fmt.Println(red, "Error parsing type command", reset)
+			return cmd, kv, err
+		}
+		kv.Value = bytes.TrimSuffix(t.Value, []byte("\n"))
+		return cmd, kv, nil
 	case CmdSub:
 		s, err := parseSubCommand(Ibytes)
 		if err != nil {
@@ -210,6 +239,21 @@ func parseSetCommand(r io.Reader) (*CommandSet, error) {
 	}
 
 	return c, nil
+}
+
+func parseTypeCommand(r io.Reader) (*CommandType, error) {
+	t := &CommandType{}
+
+	var objLen uint16
+	binary.Read(r, binary.LittleEndian, &objLen)
+
+	t.Value = make([]byte, objLen)
+	_, err := r.Read(t.Value)
+	if err != nil {
+		return nil, err
+	}
+
+	return t, nil
 }
 
 func parseDelCommand(r io.Reader) (*CommandDel, error) {
